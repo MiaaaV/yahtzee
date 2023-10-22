@@ -176,7 +176,6 @@ export default function Gameboard({ navigation, route }) {
     setIsNewRound(false);
     setRoundFinished(false);
     setStatus('Throw dices to start the new round!')
-    console.log('new round started')
   };
 
   function getDicePointsColor(i) {
