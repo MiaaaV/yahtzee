@@ -34,7 +34,7 @@ export default function App() {
               color={color}
             />
           },
-          tabBarActiveTintColor: 'steelblue',
+          tabBarActiveTintColor: '#f08000',
           tabBarInactiveTintColor: 'gray',
         })}
       >

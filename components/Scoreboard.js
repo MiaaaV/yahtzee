@@ -1,6 +1,5 @@
 import Header from './Header';
-import Footer from './Footer';
-import { Text, View, TouchableOpacity, ScrollView } from 'react-native';
+import { Text, View, ScrollView } from 'react-native';
 import { useState, useEffect } from 'react';
 import { DataTable } from 'react-native-paper';
 import { NBR_OF_SCOREBOARD_ROWS, SCOREBOARD_KEY } from '../constants/Game';
@@ -21,26 +20,17 @@ export default function Scoreboard({ navigation }) {
   }, [navigation])
 
   const getScoreboardData = async () => {
+
     try {
       const jsonValue = await AsyncStorage.getItem(SCOREBOARD_KEY)
       if (jsonValue !== null) {
         let tempScores = JSON.parse(jsonValue)
-        tempScores.sort((a, b) => b.points - a.points);
+        tempScores.sort((a, b) => b.points - a.points).slice(0, NBR_OF_SCOREBOARD_ROWS)
         setScores(tempScores)
       }
     }
     catch (e) {
       console.log('Read error: ' + e)
-    }
-  }
-
-  const clearScoreboard = async () => {
-    try {
-      await AsyncStorage.clear()
-      setScores([])
-    }
-    catch (e) {
-      console.log('Clear error: ' + e)
     }
   }
 
@@ -71,7 +61,7 @@ export default function Scoreboard({ navigation }) {
               <Text style={[styles.smalltext, { marginLeft: 30 }]}>Points</Text>
             </View>
 
-            {scores.slice(-NBR_OF_SCOREBOARD_ROWS).map((player, index) => (
+            {scores.map((player, index) => (
               index < NBR_OF_SCOREBOARD_ROWS &&
               <DataTable.Row key={player.key} style={{ justifyContent: 'center' }}>
 
@@ -96,18 +86,10 @@ export default function Scoreboard({ navigation }) {
                 </DataTable.Cell>
               </DataTable.Row>
             ))}
-
-            <View>
-              <TouchableOpacity style={styles.clearbutton} onPress={clearScoreboard}>
-                <Text style={[styles.buttonText2, { alignSelf: 'center' }]}>CLEAR SCOREBOARD</Text>
-              </TouchableOpacity>
-            </View>
           </>
         }
 
       </View>
-
-      <Footer />
     </>
   )
 

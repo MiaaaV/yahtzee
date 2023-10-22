@@ -1,10 +1,9 @@
 import Header from './Header';
-import Footer from './Footer';
 import styles from '../styles/style';
-import { TouchableOpacity, Text, View } from 'react-native';
+import { TouchableOpacity, Text, View, StyleSheet } from 'react-native';
 import { Col, Row, Container } from 'react-native-flex-grid';
 import { useEffect, useState } from 'react';
-import { MAX_SPOT, NBR_OF_DICES, NBR_OF_THROWS, SCOREBOARD_KEY, BONUS_POINTS_LIMIT } from '../constants/Game';
+import { MAX_SPOT, NBR_OF_DICES, NBR_OF_THROWS, SCOREBOARD_KEY, BONUS_POINTS_LIMIT, BONUS_POINTS } from '../constants/Game';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -25,6 +24,8 @@ export default function Gameboard({ navigation, route }) {
   const [dicePointsTotal, setDicePointsTotal] = useState(new Array(MAX_SPOT).fill(0))
   const [scores, setScores] = useState([])
   const [totalSum, setTotalSum] = useState(0)
+  const [savePoints, setSavePoints] = useState(false)
+  const [bonusText, setBonusText] = useState("You are 63 points away from bonus!")
 
   useEffect(() => {
     if (playerName === '' && route.params?.player) {
@@ -55,6 +56,10 @@ export default function Gameboard({ navigation, route }) {
   }
 
   function selectDice(i) {
+    if (gameEndStatus) {
+      setStatus('Game over. All points selected!\nRemember to save your points.');
+      return;
+    }
     if (nbrOfThrowsLeft < NBR_OF_THROWS && !gameEndStatus) {
       let dices = [...selectedDices];
       dices[i] = selectedDices[i] ? false : true;
@@ -70,18 +75,6 @@ export default function Gameboard({ navigation, route }) {
   }
 
   function throwDices() {
-    if (nbrOfThrowsLeft === 0 && !roundFinished) {
-      setStatus('Select your points before the next round');
-      return 1;
-    } else if (nbrOfThrowsLeft === 0 && roundFinished) {
-      if (round < MAX_SPOT) {
-        setIsNewRound(true);
-        setRoundFinished(false);
-      } else {
-        setStatus('Game over. All points selected!');
-      }
-      return;
-    }
 
     let spots = [...diceSpots];
     for (let i = 0; i < NBR_OF_DICES; i++) {
@@ -95,9 +88,31 @@ export default function Gameboard({ navigation, route }) {
     setDiceSpots(spots);
     setStatus('Select and throw dices again');
     setIsNewRound(false);
+    setRoundFinished(false);
   };
 
-  // Functions related to points
+  // state update fix
+  useEffect(() => {
+    if (selectedDicePoints.every(point => point) || gameEndStatus) {
+      setGameEndStatus(true);
+      setRoundFinished(true);
+      setStatus('Game over. All points selected!\nRemember to save your points.');
+      return;
+    } else if (nbrOfThrowsLeft === 0 && !roundFinished) {
+      setStatus('Select your points before the next round');
+      return;
+    } else if (nbrOfThrowsLeft === 0 && roundFinished) {
+      if (round < MAX_SPOT) {
+        setIsNewRound(true);
+        setRoundFinished(false);
+      } else {
+        setStatus('Game over. All points selected!\nRemember to save your points.');
+      }
+      return;
+    }
+  }, [nbrOfThrowsLeft, roundFinished, selectedDicePoints, gameEndStatus]);
+
+
   const pointsRow = [];
   for (let spot = 0; spot < MAX_SPOT; spot++) {
     pointsRow.push(
@@ -109,10 +124,12 @@ export default function Gameboard({ navigation, route }) {
     );
   }
 
+
   function selectDicePoints(i) {
     if (nbrOfThrowsLeft === 0) {
       let selectedPoints = [...selectedDicePoints];
       let points = [...dicePointsTotal];
+
       if (!selectedPoints[i]) {
         selectedPoints[i] = true;
         let nbrOfDices = diceSpots.reduce((total, x) => (x === (i + 1) ? total + 1 : total), 0);
@@ -121,10 +138,11 @@ export default function Gameboard({ navigation, route }) {
         alert('You already selected points for ' + (i + 1));
         return points[i];
       }
-      setDicePointsTotalAndUpdateSum(points);
+      setTotalDicePoints(points);
       setSelectedDicePoints(selectedPoints);
       setRoundFinished(true);
       return points[i];
+
     } else {
       alert('Throw total of ' + NBR_OF_THROWS + ' times before setting points');
     }
@@ -134,31 +152,44 @@ export default function Gameboard({ navigation, route }) {
     return dicePointsTotal[i];
   }
 
-  function setDicePointsTotalAndUpdateSum(points) {
+  function setTotalDicePoints(points) {
     setDicePointsTotal(points);
     const sum = points.reduce((total, value) => total + value, 0);
-    setTotalSum(sum);
-  };
+    let updatedSum = sum;
+    let newBonusText = `You are ${BONUS_POINTS_LIMIT - sum} points away from bonus!`;
 
-  // Functions related to rounds and game flow
+    if (sum >= 63) {
+      updatedSum = sum + BONUS_POINTS;
+      newBonusText = 'Congrats! Bonus points (50) added';
+    }
+
+    setBonusText(newBonusText);
+    setTotalSum(updatedSum);
+  }
+
+
   function startNewRound() {
     setRound(prevRound => prevRound + 1);
     setNbrOfThrowsLeft(NBR_OF_THROWS);
     setSelectedDices(new Array(NBR_OF_DICES).fill(false));
     setDiceSpots(new Array(NBR_OF_DICES).fill(0));
-    setSelectedDicePoints(new Array(MAX_SPOT).fill(false));
     setIsNewRound(false);
     setRoundFinished(false);
+    setStatus('Throw dices to start the new round!')
+    console.log('new round started')
   };
 
   function getDicePointsColor(i) {
-    return selectedDicePoints[i] && !gameEndStatus ? "black" : "#d64400";
+    return selectedDicePoints[i] ? "#555" : "#d64400";
   }
 
   const savePlayerPoints = async () => {
     const date = new Date();
-    const options = { day: '2-digit', month: '2-digit', year: 'numeric' };
-    const formattedDate = date.toLocaleDateString('en-US', options).replace(/\//g, '.');
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear();
+
+    const formattedDate = `${day}.${month}.${year}`;
 
     const currentDate = formattedDate;
     const newKey = scores.length + 1;
@@ -180,6 +211,7 @@ export default function Gameboard({ navigation, route }) {
     } catch (e) {
       console.log('Save error: ' + e);
     }
+    alert('Points saved successfully!')
   };
 
   const getScoreboardData = async () => {
@@ -194,7 +226,6 @@ export default function Gameboard({ navigation, route }) {
     }
   };
 
-  // UI rendering
   const pointstoSelectRow = [];
   for (let diceButton = 0; diceButton < MAX_SPOT; diceButton++) {
     pointstoSelectRow.push(
@@ -213,6 +244,24 @@ export default function Gameboard({ navigation, route }) {
     );
   }
 
+  const restartGame = () => {
+    setRound(1);
+    setIsNewRound(false);
+    setRoundFinished(false);
+    setNbrOfThrowsLeft(NBR_OF_THROWS);
+    setStatus('Start the game by throwing dices!');
+    setGameEndStatus(false);
+    setSelectedDices(new Array(NBR_OF_DICES).fill(false));
+    setDiceSpots(new Array(NBR_OF_DICES).fill(0));
+    setSelectedDicePoints(new Array(MAX_SPOT).fill(false));
+    setDicePointsTotal(new Array(MAX_SPOT).fill(0));
+    setScores([]);
+    setTotalSum(0);
+    setSavePoints(false);
+
+    navigation.navigate('Home')
+  };
+
   return (
     <>
       <Header />
@@ -229,38 +278,96 @@ export default function Gameboard({ navigation, route }) {
           <Text>{status}</Text>
         </View>
 
-        <Container fluid>
+        <Container fluid >
           <Row>{dicesRow}</Row>
         </Container>
 
         <Text style={styles.smalltext}>Throws left: {nbrOfThrowsLeft}</Text>
 
-        <TouchableOpacity
-          onPress={isNewRound ? startNewRound : throwDices}
-          style={styles.button}>
-          <Text style={styles.buttonText2}>
-            {isNewRound ? 'START NEW ROUND' : 'THROW DICES'}
-          </Text>
-        </TouchableOpacity>
+        {isNewRound && !gameEndStatus && (
+          <TouchableOpacity
+            onPress={startNewRound}
+            style={[styles.button, { width: 200 }]}>
 
-        <Text>Total: {totalSum}</Text>
-        <Text>You are {BONUS_POINTS_LIMIT - totalSum} points away from bonus</Text>
-        <Text></Text>
+            <Text style={[styles.buttonText2, { fontWeight: 'bold' }]}>
+              START NEW ROUND
+            </Text>
+          </TouchableOpacity>
+        )}
+
+        {gameEndStatus && (
+          <TouchableOpacity
+            onPress={() => { restartGame(); }}
+            style={[styles.button, { marginTop: 20 }]}>
+
+            <Text style={[styles.buttonText2, { fontWeight: 'bold' }]}>NEW GAME</Text>
+          </TouchableOpacity>
+        )}
+
+        {!isNewRound && !gameEndStatus && (
+          <TouchableOpacity
+            onPress={throwDices}
+            style={[styles.button, { opacity: nbrOfThrowsLeft === 0 ? 0.5 : 1 }]}
+            disabled={nbrOfThrowsLeft === 0}>
+
+            <Text style={[styles.buttonText2, { fontWeight: 'bold' }]}>
+              THROW DICES
+            </Text>
+          </TouchableOpacity>
+        )}
+
+
+        <Text style={user.bonustxt}>Total: {totalSum}</Text>
+        <Text style={user.smallbonustxt}>{bonusText}</Text>
 
         <Container fluid>
           <Row style={styles.row}>{pointsRow}</Row>
           <Row style={styles.row}>{pointstoSelectRow}</Row>
         </Container>
 
-        <TouchableOpacity onPress={savePlayerPoints} style={styles.button}>
-          <Text style={styles.buttonText2}>SAVE POINTS</Text>
+        <TouchableOpacity
+          onPress={() => { savePlayerPoints(); setSavePoints(true); }}
+          style={[styles.button, { opacity: gameEndStatus && !savePoints ? 1 : 0.5 }]}
+          disabled={!(gameEndStatus && !savePoints)}>
+
+          <Text style={[styles.buttonText2, { fontWeight: 'bold' }]}>SAVE POINTS</Text>
         </TouchableOpacity>
 
-        <Text>Player: {playerName}</Text>
+        <View style={{ alignSelf: 'flex-start', flexDirection: 'row' }}>
+          <MaterialCommunityIcons name='account-cowboy-hat'
+            size={130}
+            color='#d64400'
+            style={{ marginTop: 5 }} />
+
+          <View style={{ flexDirection: 'column', justifyContent: 'center' }}>
+            <Text style={user.h1}>Player:</Text>
+            <Text style={{ fontSize: 20 }}>{playerName}</Text>
+          </View>
+        </View>
+
+
       </View>
 
-      <Footer />
     </>
   )
 
 }
+
+const user = StyleSheet.create({
+  h1: {
+    color: '#f08000',
+    fontSize: 20,
+    fontWeight: 'bold'
+  },
+  bonustxt: {
+    marginTop: 20,
+    fontSize: 20,
+    color: '#d64400',
+    fontWeight: 'bold'
+  },
+  smallbonustxt: {
+    fontSize: 12,
+    marginBottom: 20,
+    marginTop: 10
+  }
+})

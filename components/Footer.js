@@ -5,7 +5,7 @@ import styles from '../styles/style';
 export default function Footer() {
   return (
     <View style={styles.footer}>
-      <Text style={styles.author}>Author: your mum</Text>
+      <Text style={styles.author}>Author: Mia Vesa</Text>
     </View>
   );
 }

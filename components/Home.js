@@ -84,8 +84,7 @@ export default Home = ({ navigation }) => {
               <Text multiline='true' style={home.text}>
                 <Text style={{ fontWeight: 'bold' }}>GOAL: </Text>
                 To get points as much as possible. {BONUS_POINTS_LIMIT} points is the limit of
-                getting bonus which gives you {BONUS_POINTS}
-                points more.
+                getting bonus which gives you {BONUS_POINTS} points more.
               </Text>
               <Text></Text>
 
@@ -123,6 +122,7 @@ const home = StyleSheet.create({
     fontSize: 15
   },
   text: {
-    width: '70%',
+    width: '75%',
+    marginBottom: 10
   }
 })
