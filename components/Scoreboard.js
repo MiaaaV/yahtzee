@@ -1,11 +1,12 @@
 import Header from './Header';
 import Footer from './Footer';
-import { Text, View, Pressable, ScrollView } from 'react-native';
+import { Text, View, TouchableOpacity, ScrollView } from 'react-native';
 import { useState, useEffect } from 'react';
 import { DataTable } from 'react-native-paper';
 import { NBR_OF_SCOREBOARD_ROWS, SCOREBOARD_KEY } from '../constants/Game';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import style from '../styles/style';
+import styles from '../styles/style';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 
 export default function Scoreboard({ navigation }) {
@@ -46,45 +47,66 @@ export default function Scoreboard({ navigation }) {
   return (
     <>
       <Header />
-      <ScrollView>
-        <View>
-          <Text>Scoreboard</Text>
-          {scores.length === 0 ?
-            <Text>Scoreboard is empty</Text>
-            :
-            scores.slice(-NBR_OF_SCOREBOARD_ROWS).map((player, index) => (
+
+      <View style={{ alignItems: 'center', marginVertical: 10, marginBottom: 40 }}>
+        <View style={{ borderRadius: 50, backgroundColor: '#ffffffbb' }}>
+          <MaterialCommunityIcons
+            name={'trophy'}
+            size={80}
+            color={'#ffbb00'}
+            width={'auto'} />
+        </View>
+
+      </View>
+
+      <View>
+        {scores.length === 0 ?
+          <Text style={styles.title2}>Scoreboard is empty</Text>
+          :
+          <>
+            <View style={{ flexDirection: 'row', alignSelf: 'center', justifyContent: 'space-between', width: '70%' }}>
+              <Text style={[styles.smalltext, { marginLeft: 5 }]}>Name</Text>
+              <Text style={[styles.smalltext, { marginLeft: 45 }]}>Date</Text>
+              <Text style={[styles.smalltext, { marginLeft: 95 }]}>Time</Text>
+              <Text style={[styles.smalltext, { marginLeft: 30 }]}>Points</Text>
+            </View>
+
+            {scores.slice(-NBR_OF_SCOREBOARD_ROWS).map((player, index) => (
               index < NBR_OF_SCOREBOARD_ROWS &&
-              <DataTable.Row key={player.key}>
-                <DataTable.Cell>
-                  <Text>{index + 1}</Text>
+              <DataTable.Row key={player.key} style={{ justifyContent: 'center' }}>
+
+                <DataTable.Cell style={{ maxWidth: 20 }}>
+                  <Text>{index + 1 + '.'}</Text>
                 </DataTable.Cell>
 
-                <DataTable.Cell>
+                <DataTable.Cell style={{ justifyContent: 'center' }}>
                   <Text>{player.name}</Text>
                 </DataTable.Cell>
 
-                <DataTable.Cell>
+                <DataTable.Cell style={{ justifyContent: 'center' }}>
                   <Text>{player.date}</Text>
                 </DataTable.Cell>
 
-                <DataTable.Cell>
+                <DataTable.Cell style={{ justifyContent: 'center' }}>
                   <Text>{player.time}</Text>
                 </DataTable.Cell>
 
-                <DataTable.Cell>
-                  <Text>{player.points}</Text>
+                <DataTable.Cell style={{ justifyContent: 'flex-start', maxWidth: 50 }}>
+                  <Text style={{ fontWeight: 'bold', color: '#f08000' }}>{player.points}</Text>
                 </DataTable.Cell>
               </DataTable.Row>
-            ))
-          }
-        </View>
+            ))}
 
-        <View>
-          <Pressable onPress={clearScoreboard}>
-            <Text>CLEAR SCOREBOARD</Text>
-          </Pressable>
-        </View>
-      </ScrollView>
+            <View>
+              <TouchableOpacity style={styles.clearbutton} onPress={clearScoreboard}>
+                <Text style={[styles.buttonText2, { alignSelf: 'center' }]}>CLEAR SCOREBOARD</Text>
+              </TouchableOpacity>
+            </View>
+          </>
+        }
+
+      </View>
+
       <Footer />
     </>
   )
