@@ -1,5 +1,5 @@
 import Header from './Header';
-import { Text, View, ScrollView } from 'react-native';
+import { Text, View } from 'react-native';
 import { useState, useEffect } from 'react';
 import { DataTable } from 'react-native-paper';
 import { NBR_OF_SCOREBOARD_ROWS, SCOREBOARD_KEY } from '../constants/Game';

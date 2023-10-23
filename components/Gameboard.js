@@ -192,7 +192,8 @@ export default function Gameboard({ navigation, route }) {
 
     const currentDate = formattedDate;
     const newKey = scores.length + 1;
-    const time = date.toISOString().split('T')[1].substring(0, 5);
+    const time_options = { hour12: false, hour: '2-digit', minute: '2-digit' };
+    const time = date.toLocaleString('en-US', time_options);
     const totalPoints = dicePointsTotal.reduce((total, points) => total + points, 0);
 
     const playerPoints = {
