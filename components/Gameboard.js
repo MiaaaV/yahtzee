@@ -158,7 +158,7 @@ export default function Gameboard({ navigation, route }) {
     let updatedSum = sum;
     let newBonusText = `You are ${BONUS_POINTS_LIMIT - sum} points away from bonus!`;
 
-    if (sum >= 63) {
+    if (sum >= BONUS_POINTS_LIMIT) {
       updatedSum = sum + BONUS_POINTS;
       newBonusText = 'Congrats! Bonus points (50) added';
     }
@@ -194,14 +194,21 @@ export default function Gameboard({ navigation, route }) {
     const newKey = scores.length + 1;
     const time_options = { hour12: false, hour: '2-digit', minute: '2-digit' };
     const time = date.toLocaleString('en-US', time_options);
-    const totalPoints = dicePointsTotal.reduce((total, points) => total + points, 0);
+    const sum = dicePointsTotal.reduce((total, points) => total + points, 0);
+    let updatedSum = sum;
+    let newBonusText = `You are ${BONUS_POINTS_LIMIT - sum} points away from bonus!`;
+
+    if (sum >= BONUS_POINTS_LIMIT) {
+      updatedSum += BONUS_POINTS;
+      newBonusText = 'Congrats! Bonus points (50) added';
+    }
 
     const playerPoints = {
       key: newKey,
       name: playerName,
       date: currentDate,
       time: time,
-      points: totalPoints
+      points: updatedSum
     };
 
     try {
@@ -258,6 +265,7 @@ export default function Gameboard({ navigation, route }) {
     setScores([]);
     setTotalSum(0);
     setSavePoints(false);
+    setBonusText("You are 63 points away from bonus!")
 
     navigation.navigate('Home')
   };
